@@ -49,5 +49,8 @@ func RunCLI(ctx context.Context, args []string, writer io.Writer) error {
 }
 
 func main() {
-	RunCLI(context.Background(), os.Args, os.Stdout)
+	err := RunCLI(context.Background(), os.Args, os.Stdout)
+	if err != nil {
+		return
+	}
 }
