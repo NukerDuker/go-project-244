@@ -49,20 +49,21 @@ func getDiff(parsed1 map[string]any, parsed2 map[string]any) (string, error) {
 	}
 
 	sort.Strings(keys)
-	strDiff := ""
+	strDiff := "{"
 	for _, key := range keys {
 		val1, exists1 := parsed1[key]
 		val2, exists2 := parsed2[key]
 		if exists1 && exists2 && val1 == val2 {
-			strDiff += fmt.Sprintf("\n  %v: %v", key, val1)
+			strDiff += fmt.Sprintf("\n    %v: %v", key, val1)
 		} else if exists1 && exists2 && val1 != val2 {
-			strDiff += fmt.Sprintf("\n- %v: %v\n+ %v: %v", key, val1, key, val2)
+			strDiff += fmt.Sprintf("\n  - %v: %v\n  + %v: %v", key, val1, key, val2)
 		} else if exists1 && !exists2 {
-			strDiff += fmt.Sprintf("\n- %v: %v", key, val1)
+			strDiff += fmt.Sprintf("\n  - %v: %v", key, val1)
 		} else if exists2 && !exists1 {
-			strDiff += fmt.Sprintf("\n+ %v: %v", key, val2)
+			strDiff += fmt.Sprintf("\n  + %v: %v", key, val2)
 		}
 	}
+	strDiff += "\n}"
 	return strDiff, nil
 }
 

@@ -38,7 +38,10 @@ func RunCLI(ctx context.Context, args []string, writer io.Writer) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(writer, result)
+			_, err = fmt.Fprintln(writer, result)
+			if err != nil {
+				return err
+			}
 			return nil
 		},
 	}
