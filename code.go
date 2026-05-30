@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,36 +32,38 @@ func GenDiff(file1, file2 string, format string) (string, error) {
 }
 
 func getDiff(parsed1 map[string]any, parsed2 map[string]any) (string, error) {
-	diff := make(map[string]any)
+	keysMap := map[string]bool{}
 
-	for key1, value1 := range parsed1 {
-		value2, exists := parsed2[key1]
-		if exists && parsed1[key1] == parsed2[key1] {
-			diff["  "+key1] = value1
-		}
-		if exists && parsed1[key1] != parsed2[key1] {
-			diff["- "+key1] = value1
-			diff["+ "+key1] = value2
-		}
-		if !exists {
-			diff["- "+key1] = value1
+	for key := range parsed1 {
+		keysMap[key] = true
+	}
+
+	for key := range parsed2 {
+		keysMap[key] = true
+	}
+
+	keys := make([]string, 0, len(keysMap))
+
+	for key := range keysMap {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+	strDiff := ""
+	for _, key := range keys {
+		val1, exists1 := parsed1[key]
+		val2, exists2 := parsed2[key]
+		if exists1 && exists2 && val1 == val2 {
+			strDiff += fmt.Sprintf("\n  %v: %v", key, val1)
+		} else if exists1 && exists2 && val1 != val2 {
+			strDiff += fmt.Sprintf("\n- %v: %v\n+ %v: %v", key, val1, key, val2)
+		} else if exists1 && !exists2 {
+			strDiff += fmt.Sprintf("\n- %v: %v", key, val1)
+		} else if exists2 && !exists1 {
+			strDiff += fmt.Sprintf("\n+ %v: %v", key, val2)
 		}
 	}
-	for key2, value2 := range parsed2 {
-		_, exists := diff[key2]
-		if exists {
-			continue
-		}
-		_, exists = parsed1[key2]
-		if !exists {
-			diff["+ "+key2] = value2
-		}
-	}
-	bytes, err := json.Marshal(diff)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
+	return strDiff, nil
 }
 
 func parseFiles(
