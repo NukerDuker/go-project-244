@@ -10,7 +10,6 @@ import (
 )
 
 func GenDiff(file1, file2 string, format string) (string, error) {
-	result := "cont1: %v, cont2: %v"
 	absPath1, absPath2, err := absPathToFiles(file1, file2)
 	if err != nil {
 		return "", err
@@ -23,7 +22,45 @@ func GenDiff(file1, file2 string, format string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf(result, parsed1, parsed2), nil
+
+	diff, err := getDiff(parsed1, parsed2)
+	if err != nil {
+		return "", err
+	}
+	return diff, nil
+}
+
+func getDiff(parsed1 map[string]any, parsed2 map[string]any) (string, error) {
+	diff := make(map[string]any)
+
+	for key1, value1 := range parsed1 {
+		value2, exists := parsed2[key1]
+		if exists && parsed1[key1] == parsed2[key1] {
+			diff["  "+key1] = value1
+		}
+		if exists && parsed1[key1] != parsed2[key1] {
+			diff["- "+key1] = value1
+			diff["+ "+key1] = value2
+		}
+		if !exists {
+			diff["- "+key1] = value1
+		}
+	}
+	for key2, value2 := range parsed2 {
+		_, exists := diff[key2]
+		if exists {
+			continue
+		}
+		_, exists = parsed1[key2]
+		if !exists {
+			diff["+ "+key2] = value2
+		}
+	}
+	bytes, err := json.Marshal(diff)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
 func parseFiles(
@@ -69,7 +106,7 @@ func readFiles(path1, path2 string) ([]byte, []byte, error) {
 }
 
 func parse(content []byte, ext string) (map[string]any, error) {
-	var result map[string]any
+	result := make(map[string]any)
 	switch ext {
 	case ".json":
 		err := json.Unmarshal(content, &result)
