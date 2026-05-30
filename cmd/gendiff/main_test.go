@@ -34,3 +34,21 @@ func TestRunCLI_HelpFlagTest(t *testing.T) {
 			"Output should contains format flag msg")
 	}
 }
+
+func TestArgumentsCount_positive(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{name: "one argument passed", args: []string{"gendiff", "some/path/1"}},
+		{name: "zero argument passed", args: []string{"gendiff"}},
+	}
+	var buf bytes.Buffer
+	for _, tt := range tests {
+		actualErr := RunCLI(context.Background(), tt.args, &buf)
+		expErr := fmt.Errorf("gendiff needs two arguments to compare files, actual arguments number: %d",
+			len(tt.args)-1)
+		require.Errorf(t, actualErr, "test should produce an error")
+		require.Equal(t, expErr, actualErr, "error should be equal to expected error")
+	}
+}
